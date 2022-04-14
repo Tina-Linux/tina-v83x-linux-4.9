@@ -49,6 +49,7 @@ disp-$(CONFIG_LCD_SUPPORT_LQ101R1SX03) += lcd/lq101r1sx03.o
 disp-$(CONFIG_LCD_SUPPORT_INET_DSI_PANEL) += lcd/inet_dsi_panel.o
 disp-$(CONFIG_LCD_SUPPORT_RT13QV005D) += lcd/rt13qv005d.o
 disp-$(CONFIG_LCD_SUPPORT_ILI9881C) += lcd/ili9881c.o
+disp-$(CONFIG_LCD_SUPPORT_ILI9481) += lcd/ili9481.o
 disp-$(CONFIG_LCD_SUPPORT_TM_DSI_PANEL) += lcd/tm_dsi_panel.o
 disp-$(CONFIG_LCD_SUPPORT_ST7789V_CPU) += lcd/st7789v_cpu.o
 disp-$(CONFIG_LCD_SUPPORT_LX50HDI4002) += lcd/lx50hdi4002.o

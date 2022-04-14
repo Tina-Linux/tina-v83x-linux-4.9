@@ -1,3 +1,9 @@
+config LCD_SUPPORT_ILI9481
+	bool "LCD support ili9481 panel"
+	default n
+	---help---
+		If you want to support ili9481 panel for display driver, select it.
+
 config LCD_SUPPORT_GG1P4062UTSW
 	bool "LCD support cpu_gg1p4062utsw panel"
 	default n
