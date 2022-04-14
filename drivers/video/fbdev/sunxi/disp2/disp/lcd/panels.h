@@ -98,6 +98,9 @@ extern struct __lcd_panel WilliamLcd_panel;
 #ifdef CONFIG_LCD_SUPPORT_ILI9881C
 extern struct __lcd_panel ili9881c_dsi_panel;
 #endif
+#ifdef CONFIG_LCD_SUPPORT_ILI9481
+extern struct __lcd_panel ili9481_panel;
+#endif
 #ifdef CONFIG_LCD_SUPPORT_TM_DSI_PANEL
 extern struct __lcd_panel tm_dsi_panel;
 #endif

@@ -68,6 +68,9 @@ struct __lcd_panel *panel_array[] = {
 #ifdef CONFIG_LCD_SUPPORT_ILI9341
 	&ili9341_panel,
 #endif
+#ifdef CONFIG_LCD_SUPPORT_ILI9481
+	&ili9481_panel,
+#endif
 #ifdef CONFIG_LCD_SUPPORT_LH219WQ1
 	&lh219wq1_panel,
 #endif
