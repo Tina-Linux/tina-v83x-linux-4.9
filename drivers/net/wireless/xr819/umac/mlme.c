@@ -2718,10 +2718,10 @@ int mac80211_mgd_auth(struct ieee80211_sub_if_data *sdata,
 	wk->probe_auth.bss = req->bss;
 
 	/* if we already have a probe, don't probe again */
-	//if (req->bss->proberesp_ies)
+	if (req->bss->proberesp_ies)
 		wk->type = IEEE80211_WORK_AUTH;
-	//else
-		//wk->type = IEEE80211_WORK_DIRECT_PROBE;
+	else
+		wk->type = IEEE80211_WORK_DIRECT_PROBE;
 	wk->chan = req->bss->channel;
 	wk->chan_type = NL80211_CHAN_NO_HT;
 	wk->sdata = sdata;

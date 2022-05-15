@@ -68,4 +68,3 @@ obj-$(CONFIG_DUMP_REG)          += dump_reg/
 obj-$(CONFIG_SUNXI_TRANSFORM)   += sunxi_tr/
 obj-y                           += sunxi-di/
 obj-$(CONFIG_SUNXI_G2D)         += sunxi_g2d/
-obj-$(CONFIG_SUNXI_DSPO)         += sunxi_dspo/

@@ -499,8 +499,6 @@ clocks {
 		clk_dspo: dspo {
 			#clock-cells = <0>;
 			compatible = "allwinner,periph-clock";
-			assigned-clocks = <&clk_dspo>;
-			assigned-clock-parents = <&clk_pll_video0>;
 			clock-output-names = "dspo";
 		};
 		clk_pio: pio {

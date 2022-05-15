@@ -62,9 +62,6 @@ do {									\
 #define MAX_FIFO	32
 #define DMA_TIMEOUT	1000
 
-static int twi_regulator_enable(struct sunxi_i2c_platform_data *pdata);
-static int twi_regulator_disable(struct sunxi_i2c_platform_data *pdata);
-
 /* I2C transfer status */
 enum {
 	I2C_XFER_IDLE    = 0x1,
@@ -1075,10 +1072,9 @@ static void sunxi_i2c_dma_request(struct sunxi_i2c *i2c,
 	dma_sconfig.dst_addr_width = DMA_SLAVE_BUSWIDTH_1_BYTE;
 	dma_sconfig.src_maxburst = 16;
 	dma_sconfig.dst_maxburst = 16;
-#ifndef DRQDST_TWI0_TX
-	I2C_ERR("[i2c%d] can't susport DMA for TX\n", i2c->bus_num);
-#else
-	dma_sconfig.slave_id = sunxi_slave_id(DRQDST_TWI0_TX + i2c->bus_num,
+#if defined(CONFIG_ARCH_SUN8IW16) || defined(CONFIG_ARCH_SUN8IW18) \
+	|| defined(CONFIG_ARCH_SUN8IW19)
+	dma_sconfig.slave_id = sunxi_slave_id(SUNXI_TWI_DRQ_TX(i2c->bus_num),
 			DRQSRC_SDRAM);
 #endif
 	dma_sconfig.direction = DMA_MEM_TO_DEV;
@@ -1103,11 +1099,10 @@ static void sunxi_i2c_dma_request(struct sunxi_i2c *i2c,
 	dma_sconfig.dst_addr_width = DMA_SLAVE_BUSWIDTH_1_BYTE;
 	dma_sconfig.src_maxburst = 16;
 	dma_sconfig.dst_maxburst = 16;
-#ifndef DRQSRC_TWI0_RX
-	I2C_ERR("[i2c%d] can't susport DMA for RX\n", i2c->bus_num);
-#else
-	dma_sconfig.slave_id = sunxi_slave_id(DRQSRC_SDRAM,
-			DRQSRC_TWI0_RX + i2c->bus_num);
+#if defined(CONFIG_ARCH_SUN8IW16) || defined(CONFIG_ARCH_SUN8IW18) \
+	|| defined(CONFIG_ARCH_SUN8IW19)
+	dma_sconfig.slave_id = sunxi_slave_id(DRQDST_SDRAM,
+			SUNXI_TWI_DRQ_RX(i2c->bus_num));
 #endif
 	dma_sconfig.direction = DMA_DEV_TO_MEM;
 	ret = dmaengine_slave_config(dma_rx->chan, &dma_sconfig);
@@ -2031,12 +2026,6 @@ static int sunxi_i2c_hw_init(struct sunxi_i2c *i2c,
 		return ret;
 	}
 
-	ret = twi_regulator_enable(pdata);
-	if (ret < 0) {
-		I2C_ERR("[i2c%d] enable regulator failed!\n", i2c->bus_num);
-		return ret;
-	}
-
 	ret = twi_request_gpio(i2c);
 	if (ret < 0) {
 		I2C_ERR("[i2c%d] request i2c gpio failed!\n", i2c->bus_num);
@@ -2062,8 +2051,6 @@ static void sunxi_i2c_hw_exit(struct sunxi_i2c *i2c,
 		return;
 	}
 	twi_release_gpio(i2c);
-
-	twi_regulator_disable(pdata);
 
 	twi_regulator_release(pdata);
 }
@@ -2260,18 +2247,12 @@ static int sunxi_i2c_probe(struct platform_device *pdev)
 	i2c->adap.algo = &sunxi_i2c_algorithm;
 
 #ifndef CONFIG_SUNXI_ARISC
-#if (!defined(CONFIG_ARCH_SUN50IW9) && !defined(CONFIG_ARCH_SUN8IW19) \
-		&& !defined(CONFIG_ARCH_SUN50IW10))
+#if !defined(CONFIG_ARCH_SUN50IW9) && !defined(CONFIG_ARCH_SUN8IW19)
 	/* SUNXI_ARISC will only use twi0, enable gic interrupt when suspend */
 	if (i2c->adap.nr == 0)
 		int_flag |= IRQF_NO_SUSPEND;
 #endif
 #endif
-	if (of_property_read_u32(np, "no_suspend", &i2c->no_suspend))
-		i2c->no_suspend = 0;
-	else
-		int_flag |= IRQF_NO_SUSPEND;
-
 	ret = request_irq(irq, sunxi_i2c_handler, int_flag,
 					i2c->adap.name, i2c);
 	if (ret) {
@@ -2283,14 +2264,23 @@ static int sunxi_i2c_probe(struct platform_device *pdev)
 	i2c->adap.dev.parent = &pdev->dev;
 	i2c->adap.dev.of_node = pdev->dev.of_node;
 
+#if defined(CONFIG_ARCH_SUN8IW16) || defined(CONFIG_ARCH_SUN8IW18) \
+	|| defined(CONFIG_ARCH_SUN8IW19)
 	if (of_property_read_u32(np, "twi_drv_used", &i2c->twi_drv_used))
 		i2c->twi_drv_used = 0;
 	dprintk(DEBUG_INIT, "[i2c%d] twi_drv_used = %d\n", i2c->bus_num,
 			i2c->twi_drv_used);
 	if (of_property_read_u32(np, "twi_pkt_interval", &i2c->pkt_interval))
 		i2c->pkt_interval = 0;
-	dprintk(DEBUG_INIT, "[i2c%d] twi_pkt_interval = %d\n",
-			i2c->bus_num, i2c->pkt_interval);
+	else
+		dprintk(DEBUG_INIT, "[i2c%d] twi_pkt_interval = %d\n",
+				i2c->bus_num, i2c->pkt_interval);
+#endif
+
+	if (of_property_read_u32(np, "no_suspend", &i2c->no_suspend))
+		i2c->no_suspend = 0;
+	dprintk(DEBUG_INIT, "[i2c%d] no_suspend = %d\n", i2c->bus_num,
+			i2c->no_suspend);
 
 	ret = sunxi_i2c_hw_init(i2c, pdata, &pdev->dev);
 	if (ret != 0) {
@@ -2394,6 +2384,7 @@ static int sunxi_i2c_remove(struct platform_device *pdev)
 	return 0;
 }
 
+#ifdef CONFIG_PM
 static int twi_regulator_enable(struct sunxi_i2c_platform_data *pdata)
 {
 	if (pdata->regulator == NULL)
@@ -2420,15 +2411,13 @@ static int twi_regulator_disable(struct sunxi_i2c_platform_data *pdata)
 	return 0;
 }
 
-#ifdef CONFIG_PM
 static int sunxi_i2c_runtime_suspend(struct device *dev)
 {
 	struct platform_device *pdev = to_platform_device(dev);
 	struct sunxi_i2c *i2c = platform_get_drvdata(pdev);
 
 #ifndef CONFIG_SUNXI_ARISC
-#if (!defined(SONFIG_ARCH_SUN50IW9) && !defined(CONFIG_ARCH_SUN8IW19) \
-		&& !defined(CONFIG_ARCH_SUN50IW10))
+#if !defined(SONFIG_ARCH_SUN50IW9) && !defined(CONFIG_ARCH_SUN8IW19)
 	/* SUNXI_ARISC will only use twi0 */
 	if (i2c->adap.nr == 0)
 		return 0;
@@ -2441,7 +2430,10 @@ static int sunxi_i2c_runtime_suspend(struct device *dev)
 	}
 
 	twi_select_gpio_state(i2c->pctrl, PINCTRL_STATE_SLEEP, i2c->bus_num);
-	twi_regulator_disable(dev->platform_data);
+	if (twi_regulator_disable(dev->platform_data)) {
+		I2C_ERR("[i2c%d] suspend failed for regulator\n", i2c->bus_num);
+		return -1;
+	}
 	dprintk(DEBUG_SUSPEND, "[i2c%d] runtime suspend finish\n", i2c->bus_num);
 
 	return 0;
@@ -2453,8 +2445,7 @@ static int sunxi_i2c_runtime_resume(struct device *dev)
 	struct sunxi_i2c *i2c = platform_get_drvdata(pdev);
 
 #ifndef CONFIG_SUNXI_ARISC
-#if (!defined(CONFIG_ARCH_SUN50IW9) && !defined(CONFIG_ARCH_SUN8IW19) \
-		&& !defined(CONFIG_ARCH_SUN50IW10))
+#if !defined(CONFIG_ARCH_SUN50IW9) && !defined(CONFIG_ARCH_SUN8IW19)
 	/* SUNXI_ARISC will only use twi0 */
 	if (i2c->adap.nr == 0)
 		return 0;
@@ -2462,13 +2453,13 @@ static int sunxi_i2c_runtime_resume(struct device *dev)
 #endif
 
 	if (twi_regulator_enable(dev->platform_data)) {
+		I2C_ERR("[i2c%d] resume failed for regulator\n", i2c->bus_num);
 		return -1;
 	}
-
 	twi_select_gpio_state(i2c->pctrl, PINCTRL_STATE_DEFAULT, i2c->bus_num);
 
 	if (sunxi_i2c_clk_init(i2c)) {
-		I2C_ERR("[i2c%d] init clk failed..\n", i2c->bus_num);
+		I2C_ERR("[i2c%d] resume failed for clk\n", i2c->bus_num);
 		return -1;
 	}
 
@@ -2485,11 +2476,8 @@ static int sunxi_i2c_suspend_noirq(struct device *dev)
 	struct platform_device *pdev = to_platform_device(dev);
 	struct sunxi_i2c *i2c = platform_get_drvdata(pdev);
 
-	if (i2c->twi_drv_used)
-		twi_disable(i2c->base_addr, TWI_DRIVER_CTRL, TWI_DRV_EN);
-	if (i2c->no_suspend) {
-		dprintk(DEBUG_SUSPEND, "[i2c%d] doesn't need to  suspend\n",
-				i2c->bus_num);
+	if (i2c->no_suspend == 1) {
+		dprintk(DEBUG_SUSPEND, "[i2c%d] dosen't need to  suspend\n", i2c->bus_num);
 		return 0;
 	}
 
@@ -2502,14 +2490,8 @@ static int sunxi_i2c_resume_noirq(struct device *dev)
 	struct platform_device *pdev = to_platform_device(dev);
 	struct sunxi_i2c *i2c = platform_get_drvdata(pdev);
 
-	if (i2c->twi_drv_used) {
-		twi_set_clock(i2c, TWI_DRIVER_BUSC, 24000000, i2c->bus_freq,
-				TWI_DRV_CLK_M, TWI_DRV_CLK_N);
-		twi_enable(i2c->base_addr, TWI_DRIVER_CTRL, TWI_DRV_EN);
-	}
 	if (i2c->no_suspend) {
-		dprintk(DEBUG_SUSPEND, "[i2c%d] doesn't need to resume\n",
-				i2c->bus_num);
+		dprintk(DEBUG_SUSPEND, "[i2c%d] doesn't need to resume\n", i2c->bus_num);
 		return 0;
 	}
 

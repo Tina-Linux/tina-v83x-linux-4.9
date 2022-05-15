@@ -24,7 +24,6 @@
 #include <linux/mutex.h>
 #include <linux/clk.h>
 #include <linux/clk/sunxi.h>
-#include <linux/wait.h>
 
 #define NNA_DEBUG    1
 
@@ -44,12 +43,6 @@
 #define NNAALIGN(value, align) ((align == 0) ? value : (((value) + ((align) - 1)) & ~((align) - 1)))
 
 #define OFFSET_NNA_GLB_S_INTR_STATUS_0 0x100c
-#define CONV_ACT_SIG            1
-#define CONV_ACT_POOL_SIG       2
-#define CONV_SIG                3
-#define ELTWISE_OR_PRELU_SIG    4
-#define PRELU_POOL_SIG          5
-#define POOL_SIG                6
 
 typedef struct nna_context {
 	struct device *platform_dev;
@@ -65,8 +58,6 @@ typedef struct nna_context {
 	struct class  *nna_class;
 	struct cdev   *nna_cdev;
 	dev_t         devid;
-	wait_queue_head_t nna_queue;
-	unsigned int nna_irq_status;
 } nna_context;
 
 #endif /* __NNA_DRIVER_I_H */

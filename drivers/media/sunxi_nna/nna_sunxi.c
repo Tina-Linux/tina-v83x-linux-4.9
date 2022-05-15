@@ -18,8 +18,7 @@
 #include <linux/nna_driver.h>
 #include "nna_driver_i.h"
 
-//#define NNA_DEBUG_IRQ
-#define TIMEOUT_MS 3000
+#define NNA_DEBUG_IRQ
 
 static nna_context *nna_priv;
 
@@ -39,46 +38,15 @@ static const struct of_device_id sunxi_nna_match[] = {
 	{},
 };
 
-int reg2status(int val)
-{
-	int ret = 0;
-
-	switch (val) {
-	case 0x150001:
-	case 0x140001:
-		ret = CONV_ACT_SIG;
-		break;
-	case 0x150011:
-	case 0x100011:
-		ret = CONV_ACT_POOL_SIG;
-		break;
-	case 0x150000:
-		ret = CONV_SIG;
-		break;
-	case 0x1:
-		ret = ELTWISE_OR_PRELU_SIG;
-		break;
-	case 0x11:
-		ret = PRELU_POOL_SIG;
-		break;
-	case 0x10:
-		ret = POOL_SIG;
-		break;
-	default:
-		break;
-	}
-	return ret;
-}
 
 static irqreturn_t nna_interrupt(int irq, void *dev_id)
 {
+	__s32 val;
 
-	__u32 ret = readl(nna_priv->io + OFFSET_NNA_GLB_S_INTR_STATUS_0);
+	val = readl(nna_priv->io+OFFSET_NNA_GLB_S_INTR_STATUS_0);
+	NNA_INFO("irq status register value:0x%x,now clear it.\n", val);
+	writel(val, nna_priv->io+OFFSET_NNA_GLB_S_INTR_STATUS_0);
 
-	writel(ret, nna_priv->io + OFFSET_NNA_GLB_S_INTR_STATUS_0);
-
-	nna_priv->nna_irq_status |= ret;
-	wake_up(&nna_priv->nna_queue);
 	return IRQ_HANDLED;
 }
 
@@ -86,7 +54,6 @@ static irqreturn_t nna_interrupt(int irq, void *dev_id)
 long nna_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
 {
 	__s32 ret = 0;
-	__s32 restime = 0;
 
 #if defined(NNA_DEBUG_IRQ)
 	struct timeval time_start, time_end;
@@ -99,12 +66,10 @@ long nna_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
 
 	switch (cmd) {
 	case NNA_CMD_ENABLE_IRQ:{
-		NNA_INFO("enable nna  irq\n");
 		enable_irq(nna_priv->irq);
 		break;
 	}
 	case NNA_CMD_DISABLE_IRQ:{
-		NNA_INFO("disable nna  irq\n");
 		disable_irq(nna_priv->irq);
 		break;
 	}
@@ -125,20 +90,6 @@ long nna_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
 		sunxi_periph_reset_deassert(nna_priv->clk_rst);
 		break;
 	}
-	case NNA_CMD_QUERY:{
-		restime = wait_event_timeout(nna_priv->nna_queue,
-				     arg == (arg & nna_priv->nna_irq_status),
-				     msecs_to_jiffies(TIMEOUT_MS));
-		if (restime <= 0) {
-			NNA_ERR("wait status timeout arg 0x%lx, status 0x%x\n", arg, nna_priv->nna_irq_status);
-			ret = -1;
-			nna_priv->nna_irq_status = 0;
-		} else {
-			nna_priv->nna_irq_status = 0;
-			ret = nna_priv->nna_irq_status;
-		}
-		break;
-	}
 	/* Invalid IOCTL call */
 	default:
 		ret = -EINVAL;
@@ -150,7 +101,7 @@ long nna_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
 	do_gettimeofday(&time_end);
 	runtime = (time_end.tv_sec - time_start.tv_sec) * 1000000 +
 			  (time_end.tv_usec - time_start.tv_usec);
-	NNA_ERR("%s:use %u us!\n", __func__, runtime);
+	NNA_DBG("%s:use %u us!\n", __func__, runtime);
 #endif
 
 	return ret;
@@ -314,8 +265,6 @@ static int nna_probe(struct platform_device *pdev)
 
 	/*mutex init*/
 	mutex_init(&nna_priv->mutex);
-	init_waitqueue_head(&nna_priv->nna_queue);
-	nna_priv->nna_irq_status = 0;
 	return 0;
 
 EXIT:

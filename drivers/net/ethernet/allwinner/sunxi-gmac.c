@@ -1024,7 +1024,7 @@ static const struct dev_pm_ops geth_pm_ops = {
 static const struct dev_pm_ops geth_pm_ops;
 #endif /* CONFIG_PM */
 
-//#define sunxi_get_soc_chipid(x) {}
+#define sunxi_get_soc_chipid(x) {}
 static void geth_chip_hwaddr(u8 *addr)
 {
 #define MD5_SIZE	16

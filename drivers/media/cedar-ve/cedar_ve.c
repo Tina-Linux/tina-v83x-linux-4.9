@@ -473,78 +473,6 @@ static spinlock_t cedar_spin_lock;
 #define TASK_RELEASE   0xaa
 #define SIG_CEDAR		35
 
-static void remap_sram_to_ve(void)
-{
-	unsigned int val;
-
-#if (defined CONFIG_ARCH_SUNIVW1P1) /*for 1663*/
-		/*VE_SRAM mapping to AC320*/
-		val = readl(cedar_devp->sram_bass_vir);
-		val &= 0x80000000;
-		writel(val, cedar_devp->sram_bass_vir);
-
-		/*remapping SRAM to MACC for codec test*/
-		val = readl(cedar_devp->sram_bass_vir);
-		val |= 0x7fffffff;
-		writel(val, cedar_devp->sram_bass_vir);
-
-		/*clear bootmode bit for give sram to ve*/
-		val = readl((cedar_devp->sram_bass_vir + 1));
-		val &= 0xefffffff;
-		writel(val, (cedar_devp->sram_bass_vir + 1));
-#elif (defined CONFIG_ARCH_SUN3IW1P1)
-		/*VE_SRAM mapping to AC320*/
-		val = readl(cedar_devp->sram_bass_vir);
-		val &= 0x80000000;
-		writel(val, cedar_devp->sram_bass_vir);
-
-		/*remapping SRAM to MACC for codec test*/
-		val = readl(cedar_devp->sram_bass_vir);
-		val |= 0x7fffffff;
-		writel(val, cedar_devp->sram_bass_vir);
-
-		/*switch to normal mode from boot mode*/
-		val = readl(cedar_devp->sram_bass_vir+1);
-		val &= 0xefffffff;
-		writel(val, cedar_devp->sram_bass_vir+1);
-#else
-	#if (defined CONFIG_ARCH_SUN8IW12P1 || defined CONFIG_ARCH_SUN8IW17P1 \
-			|| defined CONFIG_ARCH_SUN8IW15P1 \
-			|| defined CONFIG_ARCH_SUN8IW16P1 \
-			|| defined CONFIG_ARCH_SUN8IW19P1 \
-			|| defined CONFIG_ARCH_SUN50IW10P1)
-
-			VE_LOGW("line 1811 set the sram data\n");
-
-			/*remapping SRAM to MACC for codec test*/
-			val = readl(cedar_devp->sram_bass_vir);
-			val |= 0x7fffffff;
-			writel(val, cedar_devp->sram_bass_vir);
-
-			/*VE_SRAM mapping to AC320*/
-			val = readl(cedar_devp->sram_bass_vir);
-			val &= 0x80000000;
-			writel(val, cedar_devp->sram_bass_vir);
-	#else
-			/*VE_SRAM mapping to AC320*/
-			val = readl(cedar_devp->sram_bass_vir);
-			val &= 0x80000000;
-			writel(val, cedar_devp->sram_bass_vir);
-
-			/*remapping SRAM to MACC for codec test*/
-			val = readl(cedar_devp->sram_bass_vir);
-			val |= 0x7fffffff;
-			writel(val, cedar_devp->sram_bass_vir);
-	#endif
-
-		/*clear bootmode bit for give sram to ve*/
-		val = readl((cedar_devp->sram_bass_vir + 1));
-		val &= 0xfeffffff;
-		writel(val, (cedar_devp->sram_bass_vir + 1));
-#endif
-
-}
-
 int enable_cedar_hw_clk(void)
 {
 	unsigned long flags;
@@ -557,9 +485,6 @@ int enable_cedar_hw_clk(void)
 
 	clk_status = 1;
 
-	/*to fix the case: not map sram to ve after suspend and resume*/
-	remap_sram_to_ve();
-
 	sunxi_periph_reset_deassert(ve_moduleclk);
 	if (clk_enable(ve_moduleclk)) {
 		cedar_ve_printk(KERN_WARNING, "enable ve_moduleclk failed;\n");
@@ -568,6 +493,7 @@ int enable_cedar_hw_clk(void)
 		res = 0;
 	}
 
+	AW_MEM_INIT_LIST_HEAD(&cedar_devp->list);
 #ifdef CEDAR_DEBUG
 	printk("%s,%d\n", __func__, __LINE__);
 #endif
@@ -602,7 +528,15 @@ int disable_cedar_hw_clk(void)
 
 	spin_unlock_irqrestore(&cedar_spin_lock, flags);
 
+	mutex_lock(&cedar_devp->lock_mem);
+	aw_mem_list_for_each_safe(pos, q, &cedar_devp->list) {
+		struct cedarv_iommu_buffer *tmp;
 
+		tmp = aw_mem_list_entry(pos, struct cedarv_iommu_buffer, i_list);
+		aw_mem_list_del(pos);
+		kfree(tmp);
+	}
+	mutex_unlock(&cedar_devp->lock_mem);
 
 #ifdef CEDAR_DEBUG
 	printk("%s,%d\n", __func__, __LINE__);
@@ -1106,7 +1040,6 @@ static long compat_cedardev_ioctl(struct file *filp, unsigned int cmd, unsigned 
 			cedar_devp->ref_count++;
 			if (cedar_devp->ref_count == 1) {
 				cedar_devp->last_min_freq = 0;
-				AW_MEM_INIT_LIST_HEAD(&cedar_devp->list);
 				enable_cedar_hw_clk();
 			}
 			up(&cedar_devp->sem);
@@ -2093,6 +2026,7 @@ static int cedardev_init(struct platform_device *pdev)
 	int ret = 0;
 	int i = 0;
 	int devno;
+	unsigned int val;
 
 #if defined(CONFIG_OF)
 	struct device_node *node;
@@ -2175,7 +2109,6 @@ static int cedardev_init(struct platform_device *pdev)
 #endif
 
 #if (defined CONFIG_ARCH_SUNIVW1P1) /*for 1663*/
-	unsigned int val;
 	val = readl(cedar_devp->clk_bass_vir+6);
 	val &= 0x7fff80f0;
 	val = val | (1<<31) | (8<<8);
@@ -2204,8 +2137,22 @@ static int cedardev_init(struct platform_device *pdev)
 	val = readl(cedar_devp->clk_bass_vir+64);
 	val |= (1<<0);
 	writel(val, cedar_devp->clk_bass_vir+64);
+
+	/*VE_SRAM mapping to AC320*/
+	val = readl(cedar_devp->sram_bass_vir);
+	val &= 0x80000000;
+	writel(val, cedar_devp->sram_bass_vir);
+
+	/*remapping SRAM to MACC for codec test*/
+	val = readl(cedar_devp->sram_bass_vir);
+	val |= 0x7fffffff;
+	writel(val, cedar_devp->sram_bass_vir);
+
+	/*clear bootmode bit for give sram to ve*/
+	val = readl((cedar_devp->sram_bass_vir + 1));
+	val &= 0xefffffff;
+	writel(val, (cedar_devp->sram_bass_vir + 1));
 #elif (defined CONFIG_ARCH_SUN3IW1P1)
-	unsigned int val;
 	val = readl(cedar_devp->clk_bass_vir+6);
 	val &= 0x7fff80f0;
 	val = val | (1<<31) | (49<<8) | (3<<0);
@@ -2234,9 +2181,56 @@ static int cedardev_init(struct platform_device *pdev)
 	val = readl(cedar_devp->clk_bass_vir+64);
 	val |= (1<<0);
 	writel(val, cedar_devp->clk_bass_vir+64);
-#endif
 
-	remap_sram_to_ve();
+	/*VE_SRAM mapping to AC320*/
+	val = readl(cedar_devp->sram_bass_vir);
+	val &= 0x80000000;
+	writel(val, cedar_devp->sram_bass_vir);
+
+	/*remapping SRAM to MACC for codec test*/
+	val = readl(cedar_devp->sram_bass_vir);
+	val |= 0x7fffffff;
+	writel(val, cedar_devp->sram_bass_vir);
+
+	/*switch to normal mode from boot mode*/
+	val = readl(cedar_devp->sram_bass_vir+1);
+	val &= 0xefffffff;
+	writel(val, cedar_devp->sram_bass_vir+1);
+#else
+	#if (defined CONFIG_ARCH_SUN8IW12P1 || defined CONFIG_ARCH_SUN8IW17P1 \
+		|| defined CONFIG_ARCH_SUN8IW15P1 \
+		|| defined CONFIG_ARCH_SUN8IW16P1 \
+		|| defined CONFIG_ARCH_SUN8IW19P1 \
+		|| defined CONFIG_ARCH_SUN50IW10P1)
+
+		VE_LOGW("line 1811 set the sram data\n");
+
+		/*remapping SRAM to MACC for codec test*/
+		val = readl(cedar_devp->sram_bass_vir);
+		val |= 0x7fffffff;
+		writel(val, cedar_devp->sram_bass_vir);
+
+		/*VE_SRAM mapping to AC320*/
+		val = readl(cedar_devp->sram_bass_vir);
+		val &= 0x80000000;
+		writel(val, cedar_devp->sram_bass_vir);
+	#else
+		/*VE_SRAM mapping to AC320*/
+		val = readl(cedar_devp->sram_bass_vir);
+		val &= 0x80000000;
+		writel(val, cedar_devp->sram_bass_vir);
+
+		/*remapping SRAM to MACC for codec test*/
+		val = readl(cedar_devp->sram_bass_vir);
+		val |= 0x7fffffff;
+		writel(val, cedar_devp->sram_bass_vir);
+	#endif
+
+	/*clear bootmode bit for give sram to ve*/
+	val = readl((cedar_devp->sram_bass_vir + 1));
+	val &= 0xfeffffff;
+	writel(val, (cedar_devp->sram_bass_vir + 1));
+#endif
 
 
 #if defined(CONFIG_OF)

@@ -243,19 +243,10 @@ static int axp2101_init_chip(struct axp_dev *axp2101)
 		return err;
 	}
 
-	/*
-	 * axp210 has two, one is 0x47 is bug,
-	 * 0x4a fix it
-	 */
-	if (chip_id == 0x47) {
+	if (chip_id == 0x47)
 		pr_info("[%s] chip id detect 0x%x !\n",
 			axp_name[axp2101_pmu_num], chip_id);
-		axp2101->axp_sub = 0;
-	} else if (chip_id == 0x4a) {
-		pr_info("[%s] chip id detect 0x%x !\n",
-			axp_name[axp2101_pmu_num], chip_id);
-		axp2101->axp_sub = 1;
-	} else
+	else
 		pr_info("[%s] chip id not detect 0x%x !\n",
 			axp_name[axp2101_pmu_num], chip_id);
 

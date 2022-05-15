@@ -608,17 +608,9 @@
 			};
 
 			sdc0_pins_c: sdc0@2 {
-				allwinner,pins = "PF0", "PF1", "PF3",
-						 "PF5";
-				allwinner,function = "jtag0";
-				allwinner,muxsel = <3>;
-				allwinner,drive = <1>;
-				allwinner,pull = <1>;
-			};
-
-			sdc0_pins_d: sdc0@3 {
-				allwinner,pins = "PF2","PF4";
-				allwinner,function = "uart0";
+				allwinner,pins = "PF0", "PF1", "PF2",
+						 "PF3", "PF4", "PF5";
+				allwinner,function = "uart0_jtag";
 				allwinner,muxsel = <3>;
 				allwinner,drive = <1>;
 				allwinner,pull = <1>;
@@ -964,81 +956,6 @@
 						 "PD5", "PD6", "PD7", "PD8",
 						 "PD18", "PD20", "PD21";
 				allwinner,function = "io_disabled";
-				allwinner,muxsel = <7>;
-				allwinner,drive = <1>;
-				allwinner,pull = <0>;
-			};
-			bt656_sep_pins_a: bt656_sep@0 {
-				allwinner,pins = "PD1", "PD2", "PD3", "PD4",
-				"PD5", "PD6", "PD7", "PD8", "PD18", "PD19","PD20","PD21";
-				allwinner,function = "bt1120";
-				allwinner,muxsel = <4>;
-				allwinner,drive = <1>;
-				allwinner,pull = <0>;
-			};
-
-			bt656_sep_pins_b: bt656_sep@1 {
-				allwinner,pins = "PD1", "PD2", "PD3", "PD4",
-				"PD5", "PD6", "PD7", "PD8", "PD18", "PD19","PD20","PD21";
-				allwinner,function = "bt1120";
-				allwinner,muxsel = <7>;
-				allwinner,drive = <1>;
-				allwinner,pull = <0>;
-			};
-
-			bt656_emb_pins_a: bt656_emb@2 {
-				allwinner,pins = "PD1", "PD2", "PD3", "PD4",
-				"PD5", "PD6", "PD7", "PD8", "PD18";
-				allwinner,function = "bt1120";
-				allwinner,muxsel = <4>;
-				allwinner,drive = <1>;
-				allwinner,pull = <0>;
-			};
-
-			bt656_emb_pins_b: bt656_emb@3 {
-				allwinner,pins = "PD1", "PD2", "PD3", "PD4",
-				"PD5", "PD6", "PD7", "PD8", "PD18";
-				allwinner,function = "bt1120";
-				allwinner,muxsel = <7>;
-				allwinner,drive = <1>;
-				allwinner,pull = <0>;
-			};
-			bt1120_sep_pins_a: bt1120_sep@4 {
-				allwinner,pins = "PD1", "PD2", "PD3", "PD4",
-				"PD5", "PD6", "PD7", "PD8","PD10","PD11","PD12",
-				"PD13","PD14","PD15","PD16","PD17",
-				"PD18", "PD19","PD20","PD21";
-				allwinner,function = "bt1120";
-				allwinner,muxsel = <4>;
-				allwinner,drive = <1>;
-				allwinner,pull = <0>;
-			};
-
-			bt1120_sep_pins_b: bt1120_sep@5 {
-				allwinner,pins = "PD1", "PD2", "PD3", "PD4",
-				"PD5", "PD6", "PD7", "PD8","PD10","PD11","PD12",
-				"PD13","PD14","PD15","PD16","PD17",
-				"PD18", "PD19","PD20","PD21";
-				allwinner,function = "bt1120";
-				allwinner,muxsel = <7>;
-				allwinner,drive = <1>;
-				allwinner,pull = <0>;
-			};
-			bt1120_emb_pins_a: bt1120_emb@6 {
-				allwinner,pins = "PD1", "PD2", "PD3", "PD4",
-				"PD5", "PD6", "PD7", "PD8","PD10","PD11","PD12",
-				"PD13","PD14","PD15","PD16","PD17", "PD18";
-				allwinner,function = "bt1120";
-				allwinner,muxsel = <4>;
-				allwinner,drive = <1>;
-				allwinner,pull = <0>;
-			};
-
-			bt1120_emb_pins_b: bt1120_emb@7 {
-				allwinner,pins = "PD1", "PD2", "PD3", "PD4",
-				"PD5", "PD6", "PD7", "PD8","PD10","PD11","PD12",
-				"PD13","PD14","PD15","PD16","PD17", "PD18";
-				allwinner,function = "bt1120";
 				allwinner,muxsel = <7>;
 				allwinner,drive = <1>;
 				allwinner,pull = <0>;

@@ -271,7 +271,10 @@
 
 	pmu {
 		compatible = "arm,cortex-a7-pmu";
-		interrupts = <GIC_SPI 140 4>;
+		interrupts = <GIC_SPI 140 4>,
+			     <GIC_SPI 141 4>,
+			     <GIC_SPI 142 4>,
+			     <GIC_SPI 143 4>;
 	};
 
 	dramfreq {
@@ -361,7 +364,6 @@
 			wakeup-source;
 			gpr_offset = <0x100>;
 			gpr_len	   = <8>;
-			gpr_cur_pos = <6>;
 		};
 
 		wdt: watchdog@030090a0 {
@@ -769,8 +771,6 @@
 			cap-wait-while-busy;
 			mmc-high-capacity-erase-size;
 			cap-erase;
-			cap-cmd23;
-			mmc-cache-ctrl;
 			/*non-removable;*/
 			/*max-frequency = <200000000>;*/
 			max-frequency = <50000000>;
@@ -826,7 +826,6 @@
 			pinctrl-0 = <&sdc0_pins_a>;
 			pinctrl-1 = <&sdc0_pins_b>;
 			pinctrl-2 = <&sdc0_pins_c>;
-			pinctrl-3 = <&sdc0_pins_d>;
 			max-frequency = <50000000>;
 			bus-width = <4>;
 			/*non-removable;*/
@@ -985,26 +984,6 @@
 			clocks = <&clk_g2d>;
 			iommus = <&mmu_aw 6 1>;
 			status = "okay";
-		};
-
-		dspo: dspo@0 {
-			compatible = "allwinner,sunxi-dspo";
-			reg = <0x0 0x06543000 0x0 0x3ff>;
-			interrupts = <GIC_SPI 93 IRQ_TYPE_LEVEL_HIGH>;
-			clocks = <&clk_dspo>;
-			pinctrl-names = "bt656-seperate","bt656-seperate-sleep",
-			 "bt656-embed","bt656-embed-sleep",
-			 "bt1120-seperate","bt1120-seperate-sleep",
-			 "bt1120-embed","bt1120-embed-sleep";
-			status = "okay";
-			pinctrl-0 = <&bt656_sep_pins_a>;
-			pinctrl-1 = <&bt656_sep_pins_b>;
-			pinctrl-2 = <&bt656_emb_pins_a>;
-			pinctrl-3 = <&bt656_emb_pins_b>;
-			pinctrl-4 = <&bt1120_sep_pins_a>;
-			pinctrl-5 = <&bt1120_sep_pins_b>;
-			pinctrl-6 = <&bt1120_emb_pins_a>;
-			pinctrl-7 = <&bt1120_emb_pins_b>;
 		};
 
 		nna: nna@02400000 {
@@ -1466,17 +1445,20 @@
 			device_type = "cpu_budget_cooling";
 			#cooling-cells = <2>;
 			status = "okay";
-			state_cnt = <2>;
+			state_cnt = <5>;
 			cluster_num = <1>;
-			state0 = <1104000 1>;
-			state1 = <600000 1>;
+			state0 = <1104000 2>;
+			state1 = <1008000 2>;
+			state2 = <912000 2>;
+			state3 = <816000 1>;
+			state4 = <600000 1>;
 		};
 
 		thermal-zones{
 			cpu_thermal_zone{
 
 				polling-delay-passive = <1000>;
-				polling-delay = <1000>;
+				polling-delay = <10000>;
 				thermal-sensors = <&ths_combine0 0>;
 
 				trips{
@@ -1485,7 +1467,22 @@
 						type = "passive";
 						hysteresis = <0>;
 					};
-					crt_trip:t2{
+					cpu_trip1:t1{
+						temperature = <90000>;
+						type = "passive";
+						hysteresis = <0>;
+					};
+					cpu_trip2:t2{
+						temperature = <100000>;
+						type = "passive";
+						hysteresis = <0>;
+					};
+					cpu_trip3:t3{
+						temperature = <110000>;
+						type = "passive";
+						hysteresis = <0>;
+					};
+					crt_trip:t8{
 						temperature = <115000>;
 						type = "critical";
 						hysteresis = <0>;
@@ -1498,6 +1495,24 @@
 						trip = <&cpu_trip0>;
 						cooling-device
 						= <&cpu_budget_cooling 1 1>;
+					};
+					bind1{
+						contribution = <0>;
+						trip = <&cpu_trip1>;
+						cooling-device
+						= <&cpu_budget_cooling 2 2>;
+					};
+					bind2{
+						contribution = <0>;
+						trip = <&cpu_trip2>;
+						cooling-device
+						= <&cpu_budget_cooling 3 3>;
+					};
+					bind3{
+						contribution = <0>;
+						trip = <&cpu_trip3>;
+						cooling-device
+						= <&cpu_budget_cooling 4 4>;
 					};
 				};
 			};

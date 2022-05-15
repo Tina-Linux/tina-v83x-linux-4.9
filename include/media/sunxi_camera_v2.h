@@ -21,7 +21,6 @@
 
 #include <linux/types.h>
 #include <linux/videodev2.h>
-#include <stdbool.h>
 
 /*  Flags for 'capability' and 'capturemode' fields */
 #define V4L2_MODE_HIGHQUALITY		0x0001
@@ -56,7 +55,6 @@ struct v4l2_win_coordinate {
 #define V4L2_FLASH_LED_MODE_RED_EYE		(V4L2_FLASH_LED_MODE_TORCH + 2)
 
 struct v4l2_win_setting {
-	__s32 metering_mode;
 	struct v4l2_win_coordinate coor;
 };
 
@@ -137,19 +135,6 @@ typedef union {
 		unsigned int res0:9;
 	} bits;
 } IMAGE_FLAG_t;
-
-typedef struct isp_to_user_params {
-	IMAGE_FLAG_t image_para;
-} isp_to_user_params_t;
-
-typedef struct user_to_isp_params {
-	IMAGE_FLAG_t image_para;
-} user_to_isp_params_t;
-
-typedef struct isp_image_params {
-	isp_to_user_params_t isp_image_params;
-	user_to_isp_params_t user_image_params;
-} isp_image_params_t;
 
 #define  V4L2_CID_HOR_VISUAL_ANGLE	(V4L2_CID_USER_SUNXI_CAMERA_BASE + 7)
 #define  V4L2_CID_VER_VISUAL_ANGLE	(V4L2_CID_USER_SUNXI_CAMERA_BASE + 8)
@@ -368,10 +353,6 @@ struct actuator_para {
 	unsigned short code_max;
 };
 
-struct flash_para {
-	unsigned int mode; //enum v4l2_flash_led_mode mode;
-};
-
 /*
  * Camera Sensor IOCTLs
  */
@@ -390,8 +371,6 @@ struct flash_para {
 	_IOWR('V', BASE_VIDIOC_PRIVATE + 64, struct actuator_ctrl)
 #define VIDIOC_VIN_ACT_INIT \
 	_IOWR('V', BASE_VIDIOC_PRIVATE + 65, struct actuator_para)
-#define VIDIOC_VIN_FLASH_EN \
-	_IOWR('V', BASE_VIDIOC_PRIVATE + 66, struct flash_para)
 
 #define VIDIOC_VIN_ISP_LOAD_REG \
 	_IOWR('V', BASE_VIDIOC_PRIVATE + 70, struct isp_table_reg_map)
