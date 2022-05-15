@@ -28,3 +28,4 @@ obj-m			+= sc2232_mipi.o
 obj-m			+= gc2053_mipi.o
 obj-m			+= sc031gs_mipi.o
 obj-m			+= bt656_bt1120_test.o
+obj-m			+= ov9732_mipi.o
