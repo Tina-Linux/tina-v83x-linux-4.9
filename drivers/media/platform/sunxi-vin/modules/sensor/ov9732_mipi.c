@@ -10,12 +10,11 @@
 #include <linux/videodev2.h>
 #include <linux/clk.h>
 #include <media/v4l2-device.h>
-#include <media/v4l2-chip-ident.h>
 #include <media/v4l2-mediabus.h>
 #include <linux/io.h>
 
-
 #include "camera.h"
+#include "sensor_helper.h"
 
 
 MODULE_AUTHOR("lwj");
