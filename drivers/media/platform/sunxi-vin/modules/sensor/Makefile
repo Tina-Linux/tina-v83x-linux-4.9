@@ -18,6 +18,7 @@ obj-m			+= imx335_mipi.o
 obj-m			+= imx278_mipi.o
 obj-m			+= imx258_mipi.o
 obj-m			+= imx386_mipi.o
+obj-m			+= ov9732_mipi.o
 #obj-m			+= s5k3h5xa.o
 #obj-m			+= ar0238_hispi.o
 #obj-m			+= nvp6134/
