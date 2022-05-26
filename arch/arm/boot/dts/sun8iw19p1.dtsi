@@ -271,10 +271,7 @@
 
 	pmu {
 		compatible = "arm,cortex-a7-pmu";
-		interrupts = <GIC_SPI 140 4>,
-			     <GIC_SPI 141 4>,
-			     <GIC_SPI 142 4>,
-			     <GIC_SPI 143 4>;
+		interrupts = <GIC_SPI 140 4>;
 	};
 
 	dramfreq {
@@ -822,8 +819,10 @@
 				 <&clk_sdmmc0_bus>,
 				 <&clk_sdmmc0_rst>;
 			clock-names = "osc24m","pll_periph","mmc","ahb","rst";
-			pinctrl-names = "default";
+			pinctrl-names = "default","sleep";
 			pinctrl-0 = <&sdc0_pins_a>;
+			// pinctrl-1 = <&sdc0_pins_b>;
+			// pinctrl-2 = <&sdc0_pins_c>;
 			max-frequency = <50000000>;
 			bus-width = <4>;
 			/*non-removable;*/
@@ -855,7 +854,7 @@
 			/*sunxi-dly-104M-ddr  = <1 0 0 0>;*/
 			/*sunxi-dly-208M-ddr  = <1 0 0 0>;*/
 
-			status = "okay";
+			status = "disable";
 		};
 
 		sdc1: sdmmc@04021000 {
@@ -1443,20 +1442,17 @@
 			device_type = "cpu_budget_cooling";
 			#cooling-cells = <2>;
 			status = "okay";
-			state_cnt = <5>;
+			state_cnt = <2>;
 			cluster_num = <1>;
-			state0 = <1104000 2>;
-			state1 = <1008000 2>;
-			state2 = <912000 2>;
-			state3 = <816000 1>;
-			state4 = <600000 1>;
+			state0 = <1104000 1>;
+			state1 = <600000 1>;
 		};
 
 		thermal-zones{
 			cpu_thermal_zone{
 
 				polling-delay-passive = <1000>;
-				polling-delay = <10000>;
+				polling-delay = <1000>;
 				thermal-sensors = <&ths_combine0 0>;
 
 				trips{
@@ -1465,22 +1461,7 @@
 						type = "passive";
 						hysteresis = <0>;
 					};
-					cpu_trip1:t1{
-						temperature = <90000>;
-						type = "passive";
-						hysteresis = <0>;
-					};
-					cpu_trip2:t2{
-						temperature = <100000>;
-						type = "passive";
-						hysteresis = <0>;
-					};
-					cpu_trip3:t3{
-						temperature = <110000>;
-						type = "passive";
-						hysteresis = <0>;
-					};
-					crt_trip:t8{
+					crt_trip:t2{
 						temperature = <115000>;
 						type = "critical";
 						hysteresis = <0>;
@@ -1493,24 +1474,6 @@
 						trip = <&cpu_trip0>;
 						cooling-device
 						= <&cpu_budget_cooling 1 1>;
-					};
-					bind1{
-						contribution = <0>;
-						trip = <&cpu_trip1>;
-						cooling-device
-						= <&cpu_budget_cooling 2 2>;
-					};
-					bind2{
-						contribution = <0>;
-						trip = <&cpu_trip2>;
-						cooling-device
-						= <&cpu_budget_cooling 3 3>;
-					};
-					bind3{
-						contribution = <0>;
-						trip = <&cpu_trip3>;
-						cooling-device
-						= <&cpu_budget_cooling 4 4>;
 					};
 				};
 			};
