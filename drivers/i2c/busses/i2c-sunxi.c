@@ -1178,9 +1178,11 @@ static int i2c_sunxi_drv_complete(struct sunxi_i2c *i2c)
 		i2c_drv_disable_dma_irq(DMA_TX | DMA_RX, i2c->base_addr);
 		return -ETIME;
 	} else if (i2c->result == RESULT_ERR) {
+#if 0
 		I2C_ERR("[i2c%d] incomplete xfer"
 				"(status: 0x%x, dev addr: 0x%x)\n",
 				i2c->bus_num, i2c->msg_idx, i2c->msg->addr);
+#endif		
 #if (!defined(CONFIG_ARCH_SUN8IW16) && !defined(CONFIG_ARCH_SUN8IW19))
 		dump_reg(i2c, 0x200, 0x20);
 #endif
