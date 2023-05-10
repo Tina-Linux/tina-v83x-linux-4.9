@@ -69,8 +69,8 @@ pinctrl-1 = <&rgb8_pins_b>;
 
 #define CPU_TRI_MODE
 
-#define DBG_INFO(format, args...) (printk("[ST7789V LCD INFO] LINE:%04d-->%s:"format, __LINE__, __func__, ##args))
-#define DBG_ERR(format, args...) (printk("[ST7789V LCD ERR] LINE:%04d-->%s:"format, __LINE__, __func__, ##args))
+#define DBG_INFO(format, args...) // (printk("[ST7789V LCD INFO] LINE:%04d-->%s:"format, __LINE__, __func__, ##args))
+#define DBG_ERR(format, args...) // (printk("[ST7789V LCD ERR] LINE:%04d-->%s:"format, __LINE__, __func__, ##args))
 #define panel_reset(val) sunxi_lcd_gpio_set_value(sel, 0, val)
 #define lcd_cs(val)  sunxi_lcd_gpio_set_value(sel, 1, val)
 
@@ -82,6 +82,24 @@ static void LCD_bl_close(u32 sel);
 
 static void LCD_panel_init(u32 sel);
 static void LCD_panel_exit(u32 sel);
+
+extern void tcon_reset(u32 sel);
+
+/**
+ * @name       :lcd_esd_check
+ * @brief      :check if panel is ok
+ * @param[IN]  :sel:index of dsi
+ * @param[OUT] :none
+ * @return     :0 if ok, else not ok
+ */
+static s32 lcd_esd_check(u32 sel)
+{
+  // pr_info("[lcd_esd_check] %d\n", sel);
+
+	tcon_reset(sel);
+
+	return 0;
+}
 
 static void LCD_cfg_panel_info(struct panel_extend_para *info)
 {
@@ -179,6 +197,10 @@ static void LCD_power_off(u32 sel)
 	/*lcd_rst, active hight */
 	panel_reset(1);
 	sunxi_lcd_delay_ms(10);
+	panel_reset(0);
+	sunxi_lcd_delay_ms(10);
+	panel_reset(1);
+	// sunxi_lcd_delay_ms(20);
 
 	sunxi_lcd_pin_cfg(sel, 0);
 	/*config lcd_power pin to close lcd power0 */
@@ -225,87 +247,76 @@ static void lcd_panel_st7789v_init(u32 sel, struct disp_panel_para *info)
 	DBG_INFO("\n");
 	/*lcd_cs, active low */
 	lcd_cs(0);
-	sunxi_lcd_delay_ms(10);
+	sunxi_lcd_delay_ms(1);
 	panel_reset(1);
-	sunxi_lcd_delay_ms(20);
+	sunxi_lcd_delay_ms(2);
 	panel_reset(0);
-	sunxi_lcd_delay_ms(20);
+	sunxi_lcd_delay_ms(2);
 	panel_reset(1);
-	sunxi_lcd_delay_ms(20);
+	sunxi_lcd_delay_ms(2);
 	sunxi_lcd_cpu_write_index(0, 0x11);
-	sunxi_lcd_delay_ms(120);
+	sunxi_lcd_delay_ms(12);
 	sunxi_lcd_cpu_write_index(0, 0x36);
-	sunxi_lcd_cpu_write_data(0, 0x00);
-	sunxi_lcd_cpu_write_index(0, 0x3a);
-	sunxi_lcd_cpu_write_data(0, 0x06);
-	sunxi_lcd_cpu_write_index(0, 0x21);
-	sunxi_lcd_cpu_write_index(0, 0xb2);
-	sunxi_lcd_cpu_write_data(0, 0x05);
-	sunxi_lcd_cpu_write_data(0, 0x05);
-	sunxi_lcd_cpu_write_data(0, 0x00);
-	sunxi_lcd_cpu_write_data(0, 0x33);
-	sunxi_lcd_cpu_write_data(0, 0x33);
-	sunxi_lcd_cpu_write_index(0, 0xb7);
-	sunxi_lcd_cpu_write_data(0, 0x35);
+	sunxi_lcd_cpu_write_data( 0, 0x00);
+	sunxi_lcd_cpu_write_index(0, 0x3A);
+	sunxi_lcd_cpu_write_data( 0, 0x05); /* RGB565 */
+	sunxi_lcd_cpu_write_index(0, 0xB2);
+	sunxi_lcd_cpu_write_data( 0, 0x0C);
+	sunxi_lcd_cpu_write_data( 0, 0x0C);
+	sunxi_lcd_cpu_write_data( 0, 0x00);
+	sunxi_lcd_cpu_write_data( 0, 0x33);
+	sunxi_lcd_cpu_write_data( 0, 0x33);
+	sunxi_lcd_cpu_write_index(0, 0xB7);
+	sunxi_lcd_cpu_write_data( 0, 0x70);
 	/*ST7789V Power setting */
-	sunxi_lcd_cpu_write_index(0, 0xb8);
-	sunxi_lcd_cpu_write_data(0, 0x2f);
-	sunxi_lcd_cpu_write_data(0, 0x2b);
-	sunxi_lcd_cpu_write_data(0, 0x2f);
-	sunxi_lcd_cpu_write_index(0, 0xbb);
-	sunxi_lcd_cpu_write_data(0, 0x20);
-	sunxi_lcd_cpu_write_index(0, 0xc0);
-	sunxi_lcd_cpu_write_data(0, 0x2c);
-	sunxi_lcd_cpu_write_index(0, 0xc2);
-	sunxi_lcd_cpu_write_data(0, 0x01);
-	sunxi_lcd_cpu_write_index(0, 0xc3);
-	sunxi_lcd_cpu_write_data(0, 0x0b);
-	sunxi_lcd_cpu_write_index(0, 0xc4);
-	sunxi_lcd_cpu_write_data(0, 0x20);
-	sunxi_lcd_cpu_write_index(0, 0xc6);
-	sunxi_lcd_cpu_write_data(0, 0x11);
-	sunxi_lcd_cpu_write_index(0, 0xd0);
-	sunxi_lcd_cpu_write_data(0, 0xa4);
-	sunxi_lcd_cpu_write_data(0, 0xa1);
-	sunxi_lcd_cpu_write_index(0, 0xe8);
-	sunxi_lcd_cpu_write_data(0, 0x03);
-	sunxi_lcd_cpu_write_index(0, 0xe9);
-	sunxi_lcd_cpu_write_data(0, 0x0d);
-	sunxi_lcd_cpu_write_data(0, 0x12);
-	sunxi_lcd_cpu_write_data(0, 0x00);
-	/*ST7789V gamma setting */
-	sunxi_lcd_cpu_write_index(0, 0xe0);
-	sunxi_lcd_cpu_write_data(0, 0xd0);
-	sunxi_lcd_cpu_write_data(0, 0x06);
-	sunxi_lcd_cpu_write_data(0, 0x0b);
-	sunxi_lcd_cpu_write_data(0, 0x0a);
-	sunxi_lcd_cpu_write_data(0, 0x09);
-	sunxi_lcd_cpu_write_data(0, 0x05);
-	sunxi_lcd_cpu_write_data(0, 0x2e);
-	sunxi_lcd_cpu_write_data(0, 0x43);
-	sunxi_lcd_cpu_write_data(0, 0x44);
-	sunxi_lcd_cpu_write_data(0, 0x09);
-	sunxi_lcd_cpu_write_data(0, 0x16);
-	sunxi_lcd_cpu_write_data(0, 0x15);
-	sunxi_lcd_cpu_write_data(0, 0x23);
-	sunxi_lcd_cpu_write_data(0, 0x27);
-	sunxi_lcd_cpu_write_index(0, 0xe1);
-	sunxi_lcd_cpu_write_data(0, 0xd0);
-	sunxi_lcd_cpu_write_data(0, 0x06);
-	sunxi_lcd_cpu_write_data(0, 0x0b);
-	sunxi_lcd_cpu_write_data(0, 0x09);
-	sunxi_lcd_cpu_write_data(0, 0x08);
-	sunxi_lcd_cpu_write_data(0, 0x06);
-	sunxi_lcd_cpu_write_data(0, 0x2e);
-	sunxi_lcd_cpu_write_data(0, 0x44);
-	sunxi_lcd_cpu_write_data(0, 0x44);
-	sunxi_lcd_cpu_write_data(0, 0x3a);
-	sunxi_lcd_cpu_write_data(0, 0x15);
-	sunxi_lcd_cpu_write_data(0, 0x15);
-	sunxi_lcd_cpu_write_data(0, 0x23);
-	sunxi_lcd_cpu_write_data(0, 0x26);
+	sunxi_lcd_cpu_write_index(0, 0xBB);
+	sunxi_lcd_cpu_write_data( 0, 0x35);
+	sunxi_lcd_cpu_write_index(0, 0xC2);
+	sunxi_lcd_cpu_write_data( 0, 0x01);
+	sunxi_lcd_cpu_write_index(0, 0xC3);
+	sunxi_lcd_cpu_write_data( 0, 0xaf);
+	sunxi_lcd_cpu_write_index(0, 0xC4);
+	sunxi_lcd_cpu_write_data( 0, 0x20);
+	sunxi_lcd_cpu_write_index(0, 0xC6);
+	sunxi_lcd_cpu_write_data( 0, 0x0F);
+	sunxi_lcd_cpu_write_index(0, 0xD0);
+	sunxi_lcd_cpu_write_data( 0, 0xA4);
+	sunxi_lcd_cpu_write_data( 0, 0xA1);
+	// /*ST7789V gamma setting */
+	sunxi_lcd_cpu_write_index(0, 0xE0);
+	sunxi_lcd_cpu_write_data( 0, 0xD0);
+	sunxi_lcd_cpu_write_data( 0, 0x08);
+	sunxi_lcd_cpu_write_data( 0, 0x0E);
+	sunxi_lcd_cpu_write_data( 0, 0x09);
+	sunxi_lcd_cpu_write_data( 0, 0x09);
+	sunxi_lcd_cpu_write_data( 0, 0x05);
+	sunxi_lcd_cpu_write_data( 0, 0x31);
+	sunxi_lcd_cpu_write_data( 0, 0x33);
+	sunxi_lcd_cpu_write_data( 0, 0x48);
+	sunxi_lcd_cpu_write_data( 0, 0x17);
+	sunxi_lcd_cpu_write_data( 0, 0x14);
+	sunxi_lcd_cpu_write_data( 0, 0x15);
+	sunxi_lcd_cpu_write_data( 0, 0x31);
+	sunxi_lcd_cpu_write_data( 0, 0x34);
+	sunxi_lcd_cpu_write_index(0, 0xE1);
+	sunxi_lcd_cpu_write_data( 0, 0xD0);
+	sunxi_lcd_cpu_write_data( 0, 0x08);
+	sunxi_lcd_cpu_write_data( 0, 0x0E);
+	sunxi_lcd_cpu_write_data( 0, 0x09);
+	sunxi_lcd_cpu_write_data( 0, 0x09);
+	sunxi_lcd_cpu_write_data( 0, 0x15);
+	sunxi_lcd_cpu_write_data( 0, 0x31);
+	sunxi_lcd_cpu_write_data( 0, 0x33);
+	sunxi_lcd_cpu_write_data( 0, 0x48);
+	sunxi_lcd_cpu_write_data( 0, 0x17);
+	sunxi_lcd_cpu_write_data( 0, 0x14);
+	sunxi_lcd_cpu_write_data( 0, 0x15);
+	sunxi_lcd_cpu_write_data( 0, 0x31);
+	sunxi_lcd_cpu_write_data( 0, 0x34);
+	sunxi_lcd_cpu_write_index(0, 0xd6);
+	sunxi_lcd_cpu_write_data( 0, 0xa1);
 
-#if defined(CPU_TRI_MODE)
+#if 0 //defined(CPU_TRI_MODE)
 	/* enable te, mode 0 */
 
 	sunxi_lcd_cpu_write_index(0, 0x35);
@@ -316,8 +327,48 @@ static void lcd_panel_st7789v_init(u32 sel, struct disp_panel_para *info)
 	sunxi_lcd_cpu_write_data(0, 0x80);
 #endif
 	sunxi_lcd_cpu_write_index(0, 0x29);
-	sunxi_lcd_cpu_write_index(0, 0x2c);
 
+	if(strcmp(info->lcd_model_name, "inv") == 0x00) {
+		sunxi_lcd_cpu_write_index(0, 0x21);
+	} else {
+		sunxi_lcd_cpu_write_index(0, 0x20);
+	}
+
+	u16 x = 0, y = 0,w = 0, h = 0;
+
+	if(strcmp(info->lcd_size, "1.3") == 0) {
+		x = 0;
+		y = 0;
+		w = 240 - 1;
+		h = 240 - 1;
+	} else if (strcmp(info->lcd_size, "2.0") == 0) { /* 2.4 */
+		// sunxi_lcd_cpu_write_index(0, 0x36);
+		// sunxi_lcd_cpu_write_data( 0, 0xA0);
+		x = 0;
+		y = 0;
+		w = 240 - 1;
+		h = 320 - 1;
+	} else { /* 2.4 */
+		x = 0;
+		y = 0;
+		w = 240 - 1;
+		h = 320 - 1;
+	}
+
+	/* set to 240x240 */
+	sunxi_lcd_cpu_write_index(0, 0x2a);
+	sunxi_lcd_cpu_write_data(0, (u8)(x>>8));
+	sunxi_lcd_cpu_write_data(0, (u8)(x));
+	sunxi_lcd_cpu_write_data(0, (u8)(w>>8));
+	sunxi_lcd_cpu_write_data(0, (u8)(w));
+
+	sunxi_lcd_cpu_write_index(0, 0x2b);
+	sunxi_lcd_cpu_write_data(0, (u8)(y>>8));
+	sunxi_lcd_cpu_write_data(0, (u8)(y));
+	sunxi_lcd_cpu_write_data(0, (u8)(h>>8));
+	sunxi_lcd_cpu_write_data(0, (u8)(h));
+
+	sunxi_lcd_cpu_write_index(0, 0x2c);
 }
 
 
